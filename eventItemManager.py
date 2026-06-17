@@ -15,7 +15,7 @@ except Exception as e:
 class EventApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Event Collection Manager")
+        self.root.title("Event Item Manager")
         self.root.geometry("700x550")
         self.root.configure(bg="#f0f0f0")
         
@@ -30,7 +30,7 @@ class EventApp:
             self.username = simpledialog.askstring("Username", "Enter your username:")
             if not self.username:
                 messagebox.showwarning("Required", "Username is required")
-        self.root.title(f"Event Collection Manager - {self.username}")
+        self.root.title(f"Event Item Manager - {self.username}")
     
     def setup_ui(self):
         header = ttk.Frame(self.root)
@@ -65,7 +65,7 @@ class EventApp:
         
         buttons_frame = ttk.Frame(self.root)
         buttons_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Button(buttons_frame, text="Mark Amount", command=self.mark_amount).pack(side="left", padx=5)
+        ttk.Button(buttons_frame, text="Mark Amount Collected", command=self.mark_amount).pack(side="left", padx=5)
         ttk.Button(buttons_frame, text="Delete Item", command=self.delete_item).pack(side="left", padx=5)
         
         cost_frame = ttk.Frame(self.root)
@@ -156,7 +156,7 @@ class EventApp:
         item = self.current_event["items"][item_index]
         
         dialog = tk.Toplevel(self.root)
-        dialog.title("Mark Amount")
+        dialog.title("Mark Amount Collected")
         dialog.geometry("300x150")
         
         ttk.Label(dialog, text=f"Item: {item['name']}", font=("Arial", 10, "bold")).grid(row=0, columnspan=2, padx=10, pady=10)
