@@ -2,21 +2,36 @@ import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["event_collector"]
-events_collection = db["events"]
+CONNECTION_STRING = "mongodb+srv://fusiongamez88_db_user:v5sOFoTnqX48bklj@testing.soagfqk.mongodb.net/?appName=testing"
+
+try:
+    client = MongoClient(CONNECTION_STRING)
+    db = client["event_collector"]
+    events_collection = db["events"]
+    client.admin.command('ping')
+except Exception as e:
+    messagebox.showerror("Connection Error", f"Failed to connect to MongoDB Atlas:\n{str(e)}\n\nPlease check your connection string.")
 
 class EventApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Event Item Manager")
+        self.root.title("Event Collection Manager")
         self.root.geometry("700x550")
         self.root.configure(bg="#f0f0f0")
         
+        self.username = None
         self.current_event = None
+        self.ask_username()
         self.setup_ui()
         self.load_events()
         
+    def ask_username(self):
+        while not self.username:
+            self.username = simpledialog.askstring("Username", "Enter your username:")
+            if not self.username:
+                messagebox.showwarning("Required", "Username is required")
+        self.root.title(f"Event Collection Manager - {self.username}")
+    
     def setup_ui(self):
         header = ttk.Frame(self.root)
         header.pack(fill="x", padx=10, pady=10)
@@ -50,7 +65,7 @@ class EventApp:
         
         buttons_frame = ttk.Frame(self.root)
         buttons_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Button(buttons_frame, text="Mark Amount Collected", command=self.mark_amount).pack(side="left", padx=5)
+        ttk.Button(buttons_frame, text="Mark Amount", command=self.mark_amount).pack(side="left", padx=5)
         ttk.Button(buttons_frame, text="Delete Item", command=self.delete_item).pack(side="left", padx=5)
         
         cost_frame = ttk.Frame(self.root)
@@ -69,23 +84,23 @@ class EventApp:
     
     def load_events(self):
         self.events_listbox.delete(0, tk.END)
-        for event in events_collection.find():
+        for event in events_collection.find({"username": self.username}):
             self.events_listbox.insert(tk.END, event["name"])
     
     def on_event_select(self, event):
         selection = self.events_listbox.curselection()
         if selection:
             event_name = self.events_listbox.get(selection[0])
-            self.current_event = events_collection.find_one({"name": event_name})
+            self.current_event = events_collection.find_one({"username": self.username, "name": event_name})
             self.refresh_items()
     
     def new_event(self):
         name = simpledialog.askstring("New Event", "Event name:")
         if name:
-            if events_collection.find_one({"name": name}):
+            if events_collection.find_one({"username": self.username, "name": name}):
                 messagebox.showerror("Error", "Event already exists")
                 return
-            events_collection.insert_one({"name": name, "items": []})
+            events_collection.insert_one({"username": self.username, "name": name, "items": []})
             self.load_events()
     
     def add_item(self):
@@ -141,7 +156,7 @@ class EventApp:
         item = self.current_event["items"][item_index]
         
         dialog = tk.Toplevel(self.root)
-        dialog.title("Mark Amount Collected")
+        dialog.title("Mark Amount")
         dialog.geometry("300x150")
         
         ttk.Label(dialog, text=f"Item: {item['name']}", font=("Arial", 10, "bold")).grid(row=0, columnspan=2, padx=10, pady=10)
@@ -199,7 +214,6 @@ class EventApp:
         if self.current_event:
             for idx, item in enumerate(self.current_event["items"]):
                 total = item["needed"] * item["cost"]
-                collected_cost = item["collected"] * item["cost"]
                 remaining = (item["needed"] - item["collected"]) * item["cost"]
                 
                 total_cost += total
